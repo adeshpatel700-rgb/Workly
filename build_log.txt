@@ -1,0 +1,37 @@
+Running Gradle task 'assembleRelease'...                        
+e: file:///C:/Users/ADESH/Desktop/newwwww/workly/android/settings.gradle.kts:20:5: Unresolved reference: id
+e: file:///C:/Users/ADESH/Desktop/newwwww/workly/android/settings.gradle.kts:21:5: Unresolved reference: id
+e: file:///C:/Users/ADESH/Desktop/newwwww/workly/android/settings.gradle.kts:22:5: Unresolved reference: id
+e: file:///C:/Users/ADESH/Desktop/newwwww/workly/android/settings.gradle.kts:23:5: Unresolved reference: id
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Settings file 'C:\Users\ADESH\Desktop\newwwww\workly\android\settings.gradle.kts' line: 20
+
+* What went wrong:
+Script compilation errors:
+
+  Line 20:     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+               ^ Unresolved reference: id
+
+  Line 21:     id("com.android.application") version "8.11.1" apply false
+               ^ Unresolved reference: id
+
+  Line 22:     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+               ^ Unresolved reference: id
+
+  Line 23:     id("com.google.gms.google-services") version "4.4.2" apply false
+               ^ Unresolved reference: id
+
+4 errors
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s
+Running Gradle task 'assembleRelease'...                         1,318ms
+Gradle task assembleRelease failed with exit code 1
