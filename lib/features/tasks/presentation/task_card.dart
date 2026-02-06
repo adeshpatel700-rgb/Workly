@@ -155,13 +155,36 @@ class _TaskCardState extends State<TaskCard> {
                         value: isDone,
                         activeColor: AppColors.success,
                         shape: const CircleBorder(),
-                        onChanged: (val) {
-                          service.toggleTaskCompletion(
-                            widget.workplaceId,
-                            widget.task.id,
-                            widget.currentUserId,
-                            val ?? false,
+                        onChanged: (val) async {
+                          if (val == null) return;
+                          
+                          // Optional: Confirm dialog for marking done/undone
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text(val ? 'Mark as Done?' : 'Mark as Pending?'),
+                              content: Text(val 
+                                ? 'This will mark the task as completed by you.' 
+                                : 'This will revert the task status.'
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true), 
+                                  child: const Text('Confirm'),
+                                ),
+                              ],
+                            ),
                           );
+
+                          if (confirm == true) {
+                            service.toggleTaskCompletion(
+                              widget.workplaceId,
+                              widget.task.id,
+                              widget.currentUserId,
+                              val,
+                            );
+                          }
                         },
                       ),
                     ),
