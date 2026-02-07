@@ -27,30 +27,19 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       // Navigation handled by auth wrapper in main.dart
       if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
-      // Auto-provision the single admin if not found
-      if (e.toString().contains('user-not-found') && email == 'satyrendrapatel2302@gmail.com') {
-        try {
-          await auth.signUpAdmin(email, pass);
-          if (mounted) {
-             Navigator.pushReplacement(
-              context, 
-              MaterialPageRoute(builder: (_) => const CreateWorkplaceScreen())
-            );
-          }
-          return;
-        } catch (signUpError) {
-           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to create admin: $signUpError'), backgroundColor: AppColors.error),
-            );
-          }
+      if (mounted) {
+        String message = 'Login failed';
+        if (e.toString().contains('user-not-found')) {
+          message = 'User not found. Contact support.';
+        } else if (e.toString().contains('wrong-password') || e.toString().contains('invalid-credential')) {
+          message = 'Incorrect password.';
+        } else {
+          message = 'Error: $e';
         }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
-          );
-        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: AppColors.error),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
