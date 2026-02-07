@@ -12,41 +12,45 @@ class AdminLoginScreen extends StatefulWidget {
 }
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
-  final _emailController = TextEditingController();
-  final _passController = TextEditingController();
-  bool _isLogin = true;
+  final _emailController = TextEditingController(text: 'satyrendrapatel2302@gmail.com');
+  final _passController = TextEditingController(); // Password: Try?12345
   bool _isLoading = false;
 
   Future<void> _submit() async {
     setState(() => _isLoading = true);
     final auth = Provider.of<AuthService>(context, listen: false);
+    final email = _emailController.text.trim();
+    final pass = _passController.text.trim();
     
     try {
-      if (_isLogin) {
-        await auth.signInAdmin(
-          _emailController.text.trim(),
-          _passController.text.trim(),
-        );
-        // Navigation handled by auth wrapper in main.dart
-        if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+      await auth.signInAdmin(email, pass);
+      // Navigation handled by auth wrapper in main.dart
+      if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (e) {
+      // Auto-provision the single admin if not found
+      if (e.toString().contains('user-not-found') && email == 'satyrendrapatel2302@gmail.com') {
+        try {
+          await auth.signUpAdmin(email, pass);
+          if (mounted) {
+             Navigator.pushReplacement(
+              context, 
+              MaterialPageRoute(builder: (_) => const CreateWorkplaceScreen())
+            );
+          }
+          return;
+        } catch (signUpError) {
+           if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to create admin: $signUpError'), backgroundColor: AppColors.error),
+            );
+          }
+        }
       } else {
-        await auth.signUpAdmin(
-          _emailController.text.trim(),
-          _passController.text.trim(),
-        );
-        // Go to create workplace
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateWorkplaceScreen()),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
           );
         }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
-        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -56,7 +60,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isLogin ? 'Admin Login' : 'Admin Sign Up')),
+      appBar: AppBar(title: const Text('Admin Login')),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -79,17 +83,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 onPressed: _isLoading ? null : _submit,
                 child: _isLoading 
                   ? const CircularProgressIndicator(color: Colors.white) 
-                  : Text(_isLogin ? 'Log In' : 'Sign Up'),
+                  : const Text('Log In'),
               ),
             ),
-            TextButton(
-              onPressed: () => setState(() => _isLogin = !_isLogin),
-              child: Text(
-                _isLogin 
-                  ? 'New admin? Create account' 
-                  : 'Already have an account? Log in'
-              ),
-            ),
+            // Signup removed as per requirements (Single Admin Policy)
           ],
         ),
       ),
