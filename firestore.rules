@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 👤 Users Collection
+    // Users can only read and write their own profile data (e.g., storing their name/role).
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 🏢 Workplaces Collection
+    match /workplaces/{workplaceId} {
+      // 1. Read: Publicly readable by auth users so they can "search"/join by ID.
+      allow read: if request.auth != null;
+      
+      // 2. Create: Any authenticated user can create a workplace (becoming its admin).
+      allow create: if request.auth != null;
+      
+      // 3. Update: 
+      // - Admins need to update workplace details.
+      // - Users need to update the 'members' array to join.
+      // We allow authenticated updates to support both flows seamlessly.
+      allow update: if request.auth != null;
+
+      // 📋 Tasks Subcollection
+      match /tasks/{taskId} {
+        // 4. Read/Write:
+        // - Admins need to Create/Delete tasks.
+        // - Users need to "Update" tasks (mark as done).
+        // - Everyone needs to Read the list.
+        allow read, write: if request.auth != null;
+      }
+    }
+  }
+}

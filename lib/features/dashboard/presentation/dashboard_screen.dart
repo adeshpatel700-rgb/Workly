@@ -6,6 +6,8 @@ import 'package:workly/core/constants/app_colors.dart';
 import 'package:workly/features/auth/data/auth_service.dart';
 import '../../workplace/data/workplace_service.dart';
 import '../../workplace/data/models.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../workplace/presentation/create_workplace_screen.dart';
 import '../../tasks/presentation/add_task_screen.dart';
 import '../../tasks/presentation/task_list.dart';
 
@@ -29,21 +31,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _workplaceId = prefs.getString('workplaceId');
-    });
-    
-    // Fallback if prefs empty (e.g. existing admin login)
-    if (_workplaceId == null) {
+    String? wpId = prefs.getString('workplaceId');
+
+    if (wpId == null) {
       final auth = Provider.of<AuthService>(context, listen: false);
-      final role = await auth.getUserRole(); // Helper needed?
-      // For now assume if not in prefs, we might need to fetch from Firestore user doc
-      // Simplification: User must have triggered write to prefs joined/created
+      final user = auth.currentUser;
+      
+      if (user != null) {
+         // Fetch from Firestore
+         try {
+           final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+           if (userDoc.exists && userDoc.data() != null) {
+             final data = userDoc.data()!;
+             wpId = data['workplaceId'];
+             
+             // Check role while here
+             final role = data['role'];
+             if (mounted) setState(() => _userRole = role);
+
+             if (wpId != null) {
+               await prefs.setString('workplaceId', wpId);
+               if (mounted) setState(() => _workplaceId = wpId); 
+             } else if (role == 'admin') {
+               // Admin has no workplace yet -> Go create one
+               if (mounted) {
+                 Navigator.pushReplacement(
+                   context,
+                   MaterialPageRoute(builder: (_) => const CreateWorkplaceScreen()),
+                 );
+                 return;
+               }
+             }
+           }
+         } catch (e) {
+           debugPrint('Error fetching user data: $e');
+         }
+      }
     }
 
-    final auth = Provider.of<AuthService>(context, listen: false);
-    final role = await auth.getUserRole();
-    setState(() => _userRole = role);
+    if (mounted) {
+      setState(() {
+        _workplaceId = wpId;
+      });
+      // Update role if not set
+      if (_userRole == null) {
+        final auth = Provider.of<AuthService>(context, listen: false);
+        final role = await auth.getUserRole();
+        setState(() => _userRole = role);
+      }
+    }
   }
 
   void _copyId() {
