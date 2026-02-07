@@ -20,17 +20,34 @@ class _JoinWorkplaceScreenState extends State<JoinWorkplaceScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await Provider.of<AuthService>(context, listen: false).joinWorkplace(
+      final authService = Provider.of<AuthService>(context, listen: false);
+      
+      // 1. Verify Workplace Exists First (Requires Auth, so we try anonymous login first)
+      // If Anonymous Auth is disabled, this will throw immediately.
+      await authService.joinWorkplace(
         _nameController.text.trim(),
         _idController.text.trim(),
       );
+
       if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       if (mounted) {
+        String message = 'Failed to join';
+        final err = e.toString().toLowerCase();
+        
+        if (err.contains('operation-not-allowed')) {
+          message = 'Anonymous Login disabled in Firebase Console. Please enable "Anonymous" provider in Auth settings.';
+        } else if (err.contains('not-found') || err.contains('permission-denied')) {
+          message = 'Workplace not found or access denied. Check ID.';
+        } else {
+          message = 'Error: $e';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to join: $e'),
+            content: Text(message),
             backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

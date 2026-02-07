@@ -32,9 +32,29 @@ class AuthService {
 
   // User: Join Workplace (Anonymous Auth)
   Future<void> joinWorkplace(String name, String workplaceId) async {
-    UserCredential cred = await _auth.signInAnonymously();
+    // 1. Sign In Anonymously
+    UserCredential cred;
+    try {
+      cred = await _auth.signInAnonymously();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'operation-not-allowed') {
+        throw 'Enable "Anonymous" sign-in provider in Firebase Console > Authentication > Sign-in method.';
+      }
+      rethrow;
+    }
     
-    // Store user info
+    // 2. Check if Workplace Exists
+    final workplaceRef = _firestore.collection('workplaces').doc(workplaceId);
+    final workplaceDoc = await workplaceRef.get();
+    
+    if (!workplaceDoc.exists) {
+      // Clean up the anonymous user we just created? Ideally yes, but tricky.
+      // For now just throw.
+      await _auth.signOut(); // Invalid attempt, sign out to avoid phantom user state
+      throw 'Workplace ID "$workplaceId" not found.';
+    }
+
+    // 3. Store user info
     await _firestore.collection('users').doc(cred.user!.uid).set({
       'name': name,
       'role': 'user',
@@ -42,16 +62,18 @@ class AuthService {
       'workplaceId': workplaceId,
     });
 
-    // Add to workplace members
-    await _firestore.collection('workplaces').doc(workplaceId).update({
+    // 4. Add to workplace members
+    await workplaceRef.update({
       'members': FieldValue.arrayUnion([cred.user!.uid])
     });
 
-    // Persist locally
+    // 5. Persist locally
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('workplaceId', workplaceId);
     await prefs.setString('userName', name);
   }
+
+
 
   Future<void> signOut() async {
     await _auth.signOut();
