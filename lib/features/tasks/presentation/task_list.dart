@@ -50,7 +50,7 @@ class TaskList extends StatelessWidget {
 
         // Filter
         final tasks = allTasks.where((t) {
-          final isCompleted = t.completedBy.contains(uid);
+          final isCompleted = t.completedBy != null;
           switch (filter) {
             case TaskFilter.all:
               return true;

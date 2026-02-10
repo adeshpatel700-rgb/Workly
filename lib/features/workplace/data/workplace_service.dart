@@ -40,7 +40,8 @@ class WorkplaceService {
       'location': location,
       'imageBase64': imageBase64,
       'createdAt': FieldValue.serverTimestamp(),
-      'completedBy': [],
+      'completedBy': null,
+      'completedByName': null,
     });
   }
 
@@ -59,8 +60,8 @@ class WorkplaceService {
     });
   }
 
-  // Toggle Task Completion
-  Future<void> toggleTaskCompletion(String workplaceId, String taskId, String userId, bool isDone) async {
+  // Toggle Task Completion (Global)
+  Future<void> toggleTaskCompletion(String workplaceId, String taskId, String userId, bool isDone, String userName) async {
     final taskRef = _firestore
         .collection('workplaces')
         .doc(workplaceId)
@@ -69,11 +70,13 @@ class WorkplaceService {
 
     if (isDone) {
       await taskRef.update({
-        'completedBy': FieldValue.arrayUnion([userId])
+        'completedBy': userId,
+        'completedByName': userName,
       });
     } else {
       await taskRef.update({
-        'completedBy': FieldValue.arrayRemove([userId])
+        'completedBy': null,
+        'completedByName': null,
       });
     }
   }
@@ -86,5 +89,38 @@ class WorkplaceService {
         .collection('tasks')
         .doc(taskId)
         .delete();
+  }
+
+  // Get Member Details
+  Future<List<Map<String, dynamic>>> getMembersDetails(List<String> memberIds) async {
+    if (memberIds.isEmpty) return [];
+    
+    // Firestore 'in' query supports up to 10 items. 
+    // For simplicity, we fetch individually or in chunks.
+    // Fetching individually for now to be safe with >10 members.
+    List<Map<String, dynamic>> members = [];
+    
+    for (String id in memberIds) {
+      final doc = await _firestore.collection('users').doc(id).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        data['uid'] = id; // Add uid to data
+        members.add(data);
+      }
+    }
+    return members;
+  }
+
+  // Remove Member
+  Future<void> removeMember(String workplaceId, String userId) async {
+    // 1. Remove from workplace members list
+    await _firestore.collection('workplaces').doc(workplaceId).update({
+      'members': FieldValue.arrayRemove([userId])
+    });
+
+    // 2. Clear workplaceId from user doc
+    await _firestore.collection('users').doc(userId).update({
+      'workplaceId': FieldValue.delete()
+    });
   }
 }

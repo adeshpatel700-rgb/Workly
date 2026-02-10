@@ -31,7 +31,8 @@ class TaskItem {
   final String? imageBase64;
   final String? location;
   final DateTime createdAt;
-  final List<String> completedBy; // List of User IDs who completed this
+  final String? completedBy; // User ID of the completer
+  final String? completedByName; // Name of the completer
 
   TaskItem({
     required this.id,
@@ -40,7 +41,8 @@ class TaskItem {
     this.imageBase64,
     this.location,
     required this.createdAt,
-    required this.completedBy,
+    this.completedBy,
+    this.completedByName,
   });
 
   factory TaskItem.fromMap(String id, Map<String, dynamic> data) {
@@ -51,7 +53,8 @@ class TaskItem {
       imageBase64: data['imageBase64'],
       location: data['location'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      completedBy: List<String>.from(data['completedBy'] ?? []),
+      completedBy: data['completedBy'],
+      completedByName: data['completedByName'],
     );
   }
 
@@ -63,6 +66,7 @@ class TaskItem {
       'location': location,
       'createdAt': FieldValue.serverTimestamp(),
       'completedBy': completedBy,
+      'completedByName': completedByName,
     };
   }
 }

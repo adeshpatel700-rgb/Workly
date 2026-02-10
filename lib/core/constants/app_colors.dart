@@ -9,6 +9,7 @@ class AppColors {
   static const Color success = Color(0xFF4CAF50);
   static const Color textPrimary = Color(0xFF2D3142);
   static const Color textSecondary = Color(0xFF9094A6);
+  static const Color taskCardBackground = Color(0xFFF0F4F8);
   
   // Dark Mode
   static const Color backgroundDark = Color(0xFF1E1E2E);

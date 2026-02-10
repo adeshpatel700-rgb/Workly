@@ -24,22 +24,41 @@ class TaskCard extends StatefulWidget {
 
 class _TaskCardState extends State<TaskCard> {
   bool? _isAdmin;
+  String? _userName;
 
   @override
   void initState() {
     super.initState();
-    _checkRole();
+    _checkRoleAndName();
   }
 
-  void _checkRole() async {
+  void _checkRoleAndName() async {
     final auth = Provider.of<AuthService>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
+    
     final role = await auth.getUserRole();
-    if (mounted) setState(() => _isAdmin = role == 'admin');
+    final name = prefs.getString('userName') ?? 'Unknown';
+    
+    if (mounted) {
+      setState(() {
+        _isAdmin = role == 'admin';
+        _userName = name;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDone = widget.task.completedBy.contains(widget.currentUserId);
+    // New Logic: Completed if completedBy is not null
+    final isDone = widget.task.completedBy != null;
+    final completedByName = widget.task.completedByName ?? 'Unknown';
+    final isMyCompletion = widget.task.completedBy == widget.currentUserId;
+    
+    // Interaction Rules:
+    // - If not done: Anyone can do it.
+    // - If done: Only Admin or the Completer can undo.
+    final canInteract = !isDone || (_isAdmin == true || isMyCompletion);
+
     final service = Provider.of<WorkplaceService>(context, listen: false);
 
     return Dismissible(
@@ -72,6 +91,9 @@ class _TaskCardState extends State<TaskCard> {
       ),
       child: Card(
         margin: const EdgeInsets.only(bottom: 16),
+        color: AppColors.taskCardBackground, // New Calm Color
+        elevation: 0, // Flat look request
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
@@ -109,6 +131,7 @@ class _TaskCardState extends State<TaskCard> {
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               decoration: isDone ? TextDecoration.lineThrough : null,
                               color: isDone ? Colors.grey : AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -125,8 +148,9 @@ class _TaskCardState extends State<TaskCard> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -155,7 +179,7 @@ class _TaskCardState extends State<TaskCard> {
                         value: isDone,
                         activeColor: AppColors.success,
                         shape: const CircleBorder(),
-                        onChanged: (val) async {
+                        onChanged: canInteract ? (val) async {
                           if (val == null) return;
                           
                           // Optional: Confirm dialog for marking done/undone
@@ -164,8 +188,8 @@ class _TaskCardState extends State<TaskCard> {
                             builder: (ctx) => AlertDialog(
                               title: Text(val ? 'Mark as Done?' : 'Mark as Pending?'),
                               content: Text(val 
-                                ? 'This will mark the task as completed by you.' 
-                                : 'This will revert the task status.'
+                                ? 'This will mark the task as completed for everyone.' 
+                                : 'This will revert the task status for everyone.'
                               ),
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
@@ -183,19 +207,30 @@ class _TaskCardState extends State<TaskCard> {
                               widget.task.id,
                               widget.currentUserId,
                               val,
+                              _userName ?? 'Unknown',
                             );
                           }
-                        },
+                        } : null, // Disable if not allowed
                       ),
                     ),
                   ],
                 ),
                 
-                if (widget.task.completedBy.isNotEmpty) ...[
+                if (isDone) ...[
                   const Divider(height: 20),
-                  Text(
-                    'Done by ${widget.task.completedBy.length} member(s)',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, size: 16, color: AppColors.success),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Completed by $completedByName',
+                        style: const TextStyle(
+                          fontSize: 12, 
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500
+                        ),
+                      ),
+                    ],
                   ),
                 ]
               ],
