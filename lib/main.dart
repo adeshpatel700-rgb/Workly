@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/constants/app_colors.dart';
 import 'features/auth/data/auth_service.dart';
 import 'features/workplace/data/workplace_service.dart';
 import 'features/auth/presentation/landing_screen.dart';
@@ -10,15 +11,15 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    debugPrint("✅ Firebase initialized successfully");
   } catch (e) {
-    // This is expected if the user hasn't set up Firebase yet.
-    // We will show a friendly error screen or the app will fail gracefully later.
-    debugPrint("Firebase not initialized: $e");
+    debugPrint("❌ Firebase initialization error: $e");
+    // Continue anyway - the app will show error state if Firebase is needed
   }
 
   runApp(const WorklyApp());
@@ -50,21 +51,68 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
-    
+
     return StreamBuilder(
       stream: authService.userStream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.active) {
-          final user = snapshot.data;
-          if (user == null) {
-            return const LandingScreen();
-          } else {
-            return const DashboardScreen();
-          }
+        // Show error if something went wrong
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: AppColors.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Something went wrong',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    snapshot.error.toString(),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          );
         }
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+
+        // Handle all connection states properly
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            snapshot.connectionState == ConnectionState.none) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Active connection - check if user is logged in
+        final user = snapshot.data;
+        if (user == null) {
+          return const LandingScreen();
+        } else {
+          return const DashboardScreen();
+        }
       },
     );
   }

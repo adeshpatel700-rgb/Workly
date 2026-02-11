@@ -15,10 +15,7 @@ class LandingScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF6C63FF),
-              Color(0xFF8B85FF),
-            ],
+            colors: [Color(0xFF6C63FF), Color(0xFF8B85FF)],
           ),
         ),
         child: SafeArea(
@@ -37,16 +34,16 @@ class LandingScreen extends StatelessWidget {
                 Text(
                   'Workly',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ).animate().fade(delay: 200.ms).slideY(begin: 0.3, end: 0),
                 Text(
                   'Manage your team tasks\neffortlessly.',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                        height: 1.5,
-                      ),
+                    color: Colors.white.withOpacity(0.9),
+                    height: 1.5,
+                  ),
                 ).animate().fade(delay: 400.ms).slideY(begin: 0.3, end: 0),
                 const Spacer(flex: 3),
                 _AuthButton(
@@ -54,13 +51,12 @@ class LandingScreen extends StatelessWidget {
                   icon: Icons.login_rounded,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const JoinWorkplaceScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const JoinWorkplaceScreen(),
+                    ),
                   ),
                   isPrimary: true,
-                )
-                    .animate()
-                    .fade(delay: 600.ms)
-                    .slideY(begin: 0.3, end: 0),
+                ).animate().fade(delay: 600.ms).slideY(begin: 0.3, end: 0),
                 const SizedBox(height: 16),
                 _AuthButton(
                   title: 'Admin Sign In',
@@ -70,10 +66,7 @@ class LandingScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                   ),
                   isPrimary: false,
-                )
-                    .animate()
-                    .fade(delay: 700.ms)
-                    .slideY(begin: 0.3, end: 0),
+                ).animate().fade(delay: 700.ms).slideY(begin: 0.3, end: 0),
                 const SizedBox(height: 32),
               ],
             ),
@@ -100,33 +93,55 @@ class _AuthButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isPrimary ? Colors.white : Colors.white.withOpacity(0.2),
+      color: isPrimary ? Colors.white : Colors.white.withOpacity(0.15),
       borderRadius: BorderRadius.circular(16),
+      elevation: isPrimary ? 4 : 0,
+      shadowColor: Colors.black.withOpacity(0.2),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isPrimary
+                  ? Colors.transparent
+                  : Colors.white.withOpacity(0.3),
+              width: 2,
+            ),
+          ),
           width: double.infinity,
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: isPrimary ? AppColors.primary : Colors.white,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isPrimary
+                      ? AppColors.primary.withOpacity(0.1)
+                      : Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: isPrimary ? AppColors.primary : Colors.white,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 16),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: isPrimary ? AppColors.primary : Colors.white,
+                  letterSpacing: 0.3,
                 ),
               ),
               const Spacer(),
               Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
+                Icons.arrow_forward_rounded,
+                size: 20,
                 color: isPrimary ? AppColors.primary : Colors.white,
               ),
             ],

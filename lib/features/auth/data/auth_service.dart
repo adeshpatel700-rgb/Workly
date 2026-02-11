@@ -25,9 +25,30 @@ class AuthService {
 
   // Admin: Sign In
   Future<void> signInAdmin(String email, String password) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
-    // Check if role is admin?
-    // For simplicity we assume email login is always admin or we check extra doc
+    UserCredential cred = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    // Ensure user document exists - create it if it doesn't
+    final userDoc = await _firestore
+        .collection('users')
+        .doc(cred.user!.uid)
+        .get();
+
+    if (!userDoc.exists) {
+      // Create admin document if it doesn't exist
+      await _firestore.collection('users').doc(cred.user!.uid).set({
+        'email': email,
+        'role': 'admin',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Update last login
+      await _firestore.collection('users').doc(cred.user!.uid).update({
+        'lastLogin': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   // User: Join Workplace (Anonymous Auth)
@@ -42,15 +63,16 @@ class AuthService {
       }
       rethrow;
     }
-    
+
     // 2. Check if Workplace Exists
     final workplaceRef = _firestore.collection('workplaces').doc(workplaceId);
     final workplaceDoc = await workplaceRef.get();
-    
+
     if (!workplaceDoc.exists) {
       // Clean up the anonymous user we just created? Ideally yes, but tricky.
       // For now just throw.
-      await _auth.signOut(); // Invalid attempt, sign out to avoid phantom user state
+      await _auth
+          .signOut(); // Invalid attempt, sign out to avoid phantom user state
       throw 'Workplace ID "$workplaceId" not found.';
     }
 
@@ -64,7 +86,7 @@ class AuthService {
 
     // 4. Add to workplace members
     await workplaceRef.update({
-      'members': FieldValue.arrayUnion([cred.user!.uid])
+      'members': FieldValue.arrayUnion([cred.user!.uid]),
     });
 
     // 5. Persist locally
@@ -72,8 +94,6 @@ class AuthService {
     await prefs.setString('workplaceId', workplaceId);
     await prefs.setString('userName', name);
   }
-
-
 
   Future<void> signOut() async {
     await _auth.signOut();
@@ -83,7 +103,13 @@ class AuthService {
 
   Future<String?> getUserRole() async {
     if (currentUser == null) return null;
-    final doc = await _firestore.collection('users').doc(currentUser!.uid).get();
-    return doc.data()?['role'] as String?;
+    final doc = await _firestore
+        .collection('users')
+        .doc(currentUser!.uid)
+        .get();
+    final roleRaw = doc.data()?['role'];
+    return roleRaw is String
+        ? roleRaw
+        : (roleRaw is List && roleRaw.isNotEmpty ? roleRaw[0] : null);
   }
 }

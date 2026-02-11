@@ -13,11 +13,7 @@ class TaskList extends StatelessWidget {
   final String workplaceId;
   final TaskFilter filter;
 
-  const TaskList({
-    super.key,
-    required this.workplaceId,
-    required this.filter,
-  });
+  const TaskList({super.key, required this.workplaceId, required this.filter});
 
   @override
   Widget build(BuildContext context) {
@@ -28,22 +24,105 @@ class TaskList extends StatelessWidget {
       stream: wpService.getTasksStream(workplaceId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppColors.error,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Error Loading Tasks',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading tasks...',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ],
+            ),
+          );
         }
 
         final allTasks = snapshot.data ?? [];
         if (allTasks.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.assignment_outlined, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('No tasks yet!'),
-              ],
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.assignment_outlined,
+                      size: 64,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'No Tasks Yet',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tasks will appear here once created by admin',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -62,7 +141,55 @@ class TaskList extends StatelessWidget {
         }).toList();
 
         if (tasks.isEmpty) {
-           return const Center(child: Text("All caught up!"));
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      filter == TaskFilter.completed
+                          ? Icons.check_circle_outline
+                          : Icons.pending_actions_outlined,
+                      size: 64,
+                      color: filter == TaskFilter.completed
+                          ? AppColors.success
+                          : AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    filter == TaskFilter.completed
+                        ? 'All Caught Up!'
+                        : 'No Pending Tasks',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    filter == TaskFilter.completed
+                        ? 'You haven\'t completed any tasks yet'
+                        : 'Great work! All tasks are completed',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         return ListView.builder(
@@ -71,10 +198,13 @@ class TaskList extends StatelessWidget {
           itemBuilder: (context, index) {
             final task = tasks[index];
             return TaskCard(
-              task: task,
-              workplaceId: workplaceId,
-              currentUserId: uid,
-            ).animate().slideX(duration: 300.ms, delay: (50 * index).ms).fadeIn();
+                  task: task,
+                  workplaceId: workplaceId,
+                  currentUserId: uid,
+                )
+                .animate()
+                .slideX(duration: 300.ms, delay: (50 * index).ms)
+                .fadeIn();
           },
         );
       },

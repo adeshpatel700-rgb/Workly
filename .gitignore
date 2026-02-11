@@ -52,3 +52,9 @@ ios/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
 macos/Runner/GoogleService-Info.plist
 scripts/service_account.json
+
+# Firebase Cache
+.firebase/
+
+# Node.js
+node_modules/
