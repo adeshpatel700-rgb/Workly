@@ -28,6 +28,7 @@ class WorkplaceService {
     );
   }
 
+
   // Add Task
   Future<void> addTask(String workplaceId, String title, String description, String? location, String? imageBase64) async {
     await _firestore
@@ -44,6 +45,22 @@ class WorkplaceService {
       'completedByName': null,
     });
   }
+
+  // Update Task
+  Future<void> updateTask(String workplaceId, String taskId, String title, String description, String? location, String? imageBase64) async {
+    await _firestore
+        .collection('workplaces')
+        .doc(workplaceId)
+        .collection('tasks')
+        .doc(taskId)
+        .update({
+      'title': title,
+      'description': description,
+      'location': location,
+      'imageBase64': imageBase64,
+    });
+  }
+
 
   // Tasks Stream
   Stream<List<TaskItem>> getTasksStream(String workplaceId) {

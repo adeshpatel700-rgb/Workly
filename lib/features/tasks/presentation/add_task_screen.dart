@@ -5,10 +5,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:workly/core/constants/app_colors.dart';
 import '../../workplace/data/workplace_service.dart';
+import '../../workplace/data/models.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final String workplaceId;
-  const AddTaskScreen({super.key, required this.workplaceId});
+  final TaskItem? taskToEdit;
+
+  const AddTaskScreen({
+    super.key,
+    required this.workplaceId,
+    this.taskToEdit,
+  });
 
   @override
   State<AddTaskScreen> createState() => _AddTaskScreenState();
@@ -23,6 +30,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.taskToEdit != null) {
+      _titleController.text = widget.taskToEdit!.title;
+      _descController.text = widget.taskToEdit!.description;
+      _locController.text = widget.taskToEdit!.location ?? '';
+      _base64Image = widget.taskToEdit!.imageBase64;
+    }
+  }
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(
@@ -51,13 +69,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await Provider.of<WorkplaceService>(context, listen: false).addTask(
-        widget.workplaceId,
-        _titleController.text.trim(),
-        _descController.text.trim(),
-        _locController.text.trim(),
-        _base64Image,
-      );
+      if (widget.taskToEdit == null) {
+        await Provider.of<WorkplaceService>(context, listen: false).addTask(
+          widget.workplaceId,
+          _titleController.text.trim(),
+          _descController.text.trim(),
+          _locController.text.trim(),
+          _base64Image,
+        );
+      } else {
+        await Provider.of<WorkplaceService>(context, listen: false).updateTask(
+          widget.workplaceId,
+          widget.taskToEdit!.id,
+          _titleController.text.trim(),
+          _descController.text.trim(),
+          _locController.text.trim(),
+          _base64Image,
+        );
+      }
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -73,7 +102,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create New Task'), elevation: 0),
+      appBar: AppBar(
+        title: Text(widget.taskToEdit == null ? 'Create New Task' : 'Edit Task'),
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -85,7 +117,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 height: 220,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: _imageFile == null
+                  color: (_imageFile == null && _base64Image == null)
                       ? AppColors.primary.withOpacity(0.05)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
@@ -99,9 +131,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           image: FileImage(_imageFile!),
                           fit: BoxFit.cover,
                         )
-                      : null,
+                      : (_base64Image != null
+                          ? DecorationImage(
+                              image: MemoryImage(base64Decode(_base64Image!)),
+                              fit: BoxFit.cover,
+                            )
+                          : null),
                 ),
-                child: _imageFile == null
+                child: (_imageFile == null && _base64Image == null)
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -139,7 +176,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     : null,
               ),
             ),
-            if (_imageFile != null) ...[
+             if (_imageFile != null || _base64Image != null) ...[
               const SizedBox(height: 12),
               TextButton.icon(
                 onPressed: () => setState(() {
@@ -222,7 +259,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       )
                     : const Icon(Icons.check_circle, size: 24),
                 label: Text(
-                  _isLoading ? 'Creating Task...' : 'Create Task',
+                  _isLoading
+                      ? (widget.taskToEdit == null
+                          ? 'Creating Task...'
+                          : 'Updating Task...')
+                      : (widget.taskToEdit == null
+                          ? 'Create Task'
+                          : 'Update Task'),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,

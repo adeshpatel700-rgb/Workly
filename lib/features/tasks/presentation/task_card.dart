@@ -7,6 +7,7 @@ import 'package:workly/core/constants/app_colors.dart';
 import '../../workplace/data/workplace_service.dart';
 import '../../workplace/data/models.dart';
 import '../../auth/data/auth_service.dart';
+import 'add_task_screen.dart';
 
 class TaskCard extends StatefulWidget {
   final TaskItem task;
@@ -238,6 +239,22 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // EDIT BUTTON
+                    if (_isAdmin == true)
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: AppColors.primary),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AddTaskScreen(
+                                workplaceId: widget.workplaceId,
+                                taskToEdit: widget.task,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     Transform.scale(
                       scale: 1.3,
                       child: Checkbox(
