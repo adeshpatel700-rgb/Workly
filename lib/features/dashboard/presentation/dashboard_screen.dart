@@ -602,7 +602,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               backgroundColor: AppColors.primary,
               elevation: 4,
               extendedPadding: const EdgeInsets.symmetric(horizontal: 20),
-            )
+            ).animate().scale(delay: 500.ms, duration: 400.ms, curve: Curves.easeOutBack).fadeIn(delay: 500.ms)
           : null,
     );
   }
