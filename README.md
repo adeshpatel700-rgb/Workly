@@ -35,6 +35,7 @@ Built with **Flutter** and **Firebase**, it delivers a premium user experience w
 - **Workplace Generation**: Create a unique workspace in seconds.
 - **Rich Task Creation**: Add tasks with **Photos** (Base64/Storage) and **Location Tags**.
 - **Progress Tracking**: Instantly see *who* has verified a task as done.
+- **Task Editing**: Correct mistakes effortlessly.
 
 ### 👥 For Team Members
 - **Instant Access**: Join using the **Workplace ID**—no sign-up fatigue.
