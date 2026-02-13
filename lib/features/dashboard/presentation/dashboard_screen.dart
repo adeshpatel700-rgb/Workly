@@ -535,8 +535,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Provider.of<AuthService>(context, listen: false).signOut();
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Sign Out'),
+                  content: const Text('Are you sure you want to sign out?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true && mounted) {
+                Provider.of<AuthService>(context, listen: false).signOut();
+              }
             },
           ),
         ],
