@@ -87,7 +87,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           _base64Image,
         );
       }
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.taskToEdit == null
+                  ? 'Task created successfully'
+                  : 'Task updated successfully',
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
