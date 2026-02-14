@@ -165,4 +165,29 @@ class WorkplaceService {
       'workplaceId': FieldValue.delete(),
     });
   }
+
+  // Clear All Completed Tasks
+  Future<void> clearAllCompletedTasks(String workplaceId) async {
+    // Note: This only deletes completed tasks.
+    final completedTasksSnapshot = await _firestore
+        .collection('workplaces')
+        .doc(workplaceId)
+        .collection('tasks')
+        // Firestore doesn't support where != null directly, so we check for where > '' or similar if string,
+        // but since completedBy is a string or null, we can't easily query 'is not null' without an index or a specific sentinel.
+        // However, a common trick is orderBy. 
+        // Better approach: fetch all and filter client side if small, or add 'isCompleted' boolean field.
+        // For now, we will just fetch all tasks and batch delete locally for simplicity in this small app.
+        .get();
+
+    final batch = _firestore.batch();
+    for (var doc in completedTasksSnapshot.docs) {
+      if (doc.data()['completedBy'] != null) {
+        batch.delete(doc.reference);
+      }
+    }
+
+    await batch.commit();
+  }
+
 }
