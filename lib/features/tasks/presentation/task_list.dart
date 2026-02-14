@@ -180,10 +180,11 @@ class TaskList extends StatelessWidget {
                         ? 'You haven\'t completed any tasks yet'
                         : 'Great work! All tasks are completed',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: AppColors.textSecondary,
                       height: 1.5,
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
                 ],
