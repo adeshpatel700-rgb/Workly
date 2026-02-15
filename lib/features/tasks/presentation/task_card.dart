@@ -275,42 +275,94 @@ class _TaskCardState extends State<TaskCard> {
                                 HapticFeedback.mediumImpact();
                                 if (val == null) return;
 
-                                // Optional: Confirm dialog for marking done/undone
-                                final confirm = await showDialog<bool>(
+                                String? remark;
+
+                                // Show dialog with optional remark field when marking as done
+                                final result = await showDialog<Map<String, dynamic>?>(
                                   context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: Text(
-                                      val
-                                          ? 'Mark as Done?'
-                                          : 'Mark as Pending?',
-                                    ),
-                                    content: Text(
-                                      val
-                                          ? 'This will mark the task as completed for everyone.'
-                                          : 'This will revert the task status for everyone.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: const Text('Cancel'),
+                                  builder: (ctx) {
+                                    final remarkController =
+                                        TextEditingController();
+                                    return AlertDialog(
+                                      title: Text(
+                                        val
+                                            ? 'Mark as Done?'
+                                            : 'Mark as Pending?',
                                       ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: const Text('Confirm'),
-                                      ),
-                                    ],
-                                  ),
+                                      content: val
+                                          ? Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const Text(
+                                                  'This will mark the task as completed for everyone.',
+                                                ),
+                                                const SizedBox(height: 16),
+                                                const Text(
+                                                  'Add a remark (optional):',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+                                                TextField(
+                                                  controller: remarkController,
+                                                  maxLines: 3,
+                                                  maxLength: 200,
+                                                  decoration: InputDecoration(
+                                                    hintText:
+                                                        'e.g., Finished ahead of schedule',
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                    ),
+                                                    contentPadding:
+                                                        const EdgeInsets.all(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : const Text(
+                                              'This will revert the task status for everyone.',
+                                            ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, null),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx, {
+                                            'confirm': true,
+                                            'remark': remarkController.text
+                                                .trim(),
+                                          }),
+                                          child: const Text('Confirm'),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
 
-                                if (confirm == true) {
+                                if (result != null &&
+                                    result['confirm'] == true) {
+                                  remark = result['remark']?.isEmpty == true
+                                      ? null
+                                      : result['remark'];
+
                                   service.toggleTaskCompletion(
                                     widget.workplaceId,
                                     widget.task.id,
                                     widget.currentUserId,
                                     val,
                                     _userName ?? 'Unknown',
+                                    completionRemark: remark,
                                   );
                                 }
                               }
@@ -332,32 +384,72 @@ class _TaskCardState extends State<TaskCard> {
                         width: 1,
                       ),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check,
-                            size: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Completed by $completedByName',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.success,
-                              fontWeight: FontWeight.w600,
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.success,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 12,
+                                color: Colors.white,
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Completed by $completedByName',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
+                        if (widget.task.completionRemark != null &&
+                            widget.task.completionRemark!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.success.withOpacity(0.15),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.comment,
+                                  size: 14,
+                                  color: AppColors.success,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    widget.task.completionRemark!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade700,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

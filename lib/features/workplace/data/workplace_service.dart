@@ -10,57 +10,71 @@ class WorkplaceService {
   Future<String> createWorkplace(String adminId, String name) async {
     // Generate a simple 6-char ID for easier joining
     String workplaceId = _uuid.v4().substring(0, 6).toUpperCase();
-    
+
     await _firestore.collection('workplaces').doc(workplaceId).set({
       'adminId': adminId,
       'name': name,
       'createdAt': FieldValue.serverTimestamp(),
       'members': [],
     });
-    
+
     return workplaceId;
   }
 
   // Get Workplace Stream
   Stream<Workplace> getWorkplaceStream(String workplaceId) {
-    return _firestore.collection('workplaces').doc(workplaceId).snapshots().map(
-      (doc) => Workplace.fromFirestore(doc)
-    );
+    return _firestore
+        .collection('workplaces')
+        .doc(workplaceId)
+        .snapshots()
+        .map((doc) => Workplace.fromFirestore(doc));
   }
 
-
   // Add Task
-  Future<void> addTask(String workplaceId, String title, String description, String? location, String? imageBase64) async {
+  Future<void> addTask(
+    String workplaceId,
+    String title,
+    String description,
+    String? location,
+    String? imageBase64,
+  ) async {
     await _firestore
         .collection('workplaces')
         .doc(workplaceId)
         .collection('tasks')
         .add({
-      'title': title,
-      'description': description,
-      'location': location,
-      'imageBase64': imageBase64,
-      'createdAt': FieldValue.serverTimestamp(),
-      'completedBy': null,
-      'completedByName': null,
-    });
+          'title': title,
+          'description': description,
+          'location': location,
+          'imageBase64': imageBase64,
+          'createdAt': FieldValue.serverTimestamp(),
+          'completedBy': null,
+          'completedByName': null,
+          'completionRemark': null,
+        });
   }
 
   // Update Task
-  Future<void> updateTask(String workplaceId, String taskId, String title, String description, String? location, String? imageBase64) async {
+  Future<void> updateTask(
+    String workplaceId,
+    String taskId,
+    String title,
+    String description,
+    String? location,
+    String? imageBase64,
+  ) async {
     await _firestore
         .collection('workplaces')
         .doc(workplaceId)
         .collection('tasks')
         .doc(taskId)
         .update({
-      'title': title,
-      'description': description,
-      'location': location,
-      'imageBase64': imageBase64,
-    });
+          'title': title,
+          'description': description,
+          'location': location,
+          'imageBase64': imageBase64,
+        });
   }
-
 
   // Tasks Stream
   Stream<List<TaskItem>> getTasksStream(String workplaceId) {
@@ -71,14 +85,21 @@ class WorkplaceService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return TaskItem.fromMap(doc.id, doc.data());
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return TaskItem.fromMap(doc.id, doc.data());
+          }).toList();
+        });
   }
 
   // Toggle Task Completion (Global)
-  Future<void> toggleTaskCompletion(String workplaceId, String taskId, String userId, bool isDone, String userName) async {
+  Future<void> toggleTaskCompletion(
+    String workplaceId,
+    String taskId,
+    String userId,
+    bool isDone,
+    String userName, {
+    String? completionRemark,
+  }) async {
     final taskRef = _firestore
         .collection('workplaces')
         .doc(workplaceId)
@@ -89,11 +110,13 @@ class WorkplaceService {
       await taskRef.update({
         'completedBy': userId,
         'completedByName': userName,
+        'completionRemark': completionRemark,
       });
     } else {
       await taskRef.update({
         'completedBy': null,
         'completedByName': null,
+        'completionRemark': null,
       });
     }
   }
@@ -109,14 +132,16 @@ class WorkplaceService {
   }
 
   // Get Member Details
-  Future<List<Map<String, dynamic>>> getMembersDetails(List<String> memberIds) async {
+  Future<List<Map<String, dynamic>>> getMembersDetails(
+    List<String> memberIds,
+  ) async {
     if (memberIds.isEmpty) return [];
-    
-    // Firestore 'in' query supports up to 10 items. 
+
+    // Firestore 'in' query supports up to 10 items.
     // For simplicity, we fetch individually or in chunks.
     // Fetching individually for now to be safe with >10 members.
     List<Map<String, dynamic>> members = [];
-    
+
     for (String id in memberIds) {
       final doc = await _firestore.collection('users').doc(id).get();
       if (doc.exists) {
@@ -132,12 +157,12 @@ class WorkplaceService {
   Future<void> removeMember(String workplaceId, String userId) async {
     // 1. Remove from workplace members list
     await _firestore.collection('workplaces').doc(workplaceId).update({
-      'members': FieldValue.arrayRemove([userId])
+      'members': FieldValue.arrayRemove([userId]),
     });
 
     // 2. Clear workplaceId from user doc
     await _firestore.collection('users').doc(userId).update({
-      'workplaceId': FieldValue.delete()
+      'workplaceId': FieldValue.delete(),
     });
   }
 }

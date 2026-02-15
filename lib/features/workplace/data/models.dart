@@ -41,6 +41,7 @@ class TaskItem {
   final DateTime createdAt;
   final String? completedBy; // User ID of the completer
   final String? completedByName; // Name of the completer
+  final String? completionRemark; // Optional remark when marking as done
 
   TaskItem({
     required this.id,
@@ -51,6 +52,7 @@ class TaskItem {
     required this.createdAt,
     this.completedBy,
     this.completedByName,
+    this.completionRemark,
   });
 
   factory TaskItem.fromMap(String id, Map<String, dynamic> data) {
@@ -63,6 +65,7 @@ class TaskItem {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       completedBy: _safeString(data['completedBy']),
       completedByName: _safeString(data['completedByName']),
+      completionRemark: _safeString(data['completionRemark']),
     );
   }
 
@@ -75,6 +78,7 @@ class TaskItem {
       'createdAt': FieldValue.serverTimestamp(),
       'completedBy': completedBy,
       'completedByName': completedByName,
+      'completionRemark': completionRemark,
     };
   }
 }
