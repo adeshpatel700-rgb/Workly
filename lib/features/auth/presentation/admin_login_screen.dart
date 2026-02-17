@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workly/core/constants/app_colors.dart';
 import '../data/auth_service.dart';
+import '../../../../core/utils/ui_utils.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -29,19 +30,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       if (mounted) {
-        String message = 'Login failed';
-        if (e.toString().contains('user-not-found')) {
-          message = 'User not found. Contact support.';
-        } else if (e.toString().contains('wrong-password') ||
-            e.toString().contains('invalid-credential')) {
-          message = 'Incorrect password.';
-        } else {
-          message = 'Error: $e';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: AppColors.error),
-        );
+        UiUtils.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

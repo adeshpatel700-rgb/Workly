@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:workly/core/constants/app_colors.dart';
+import 'package:workly/core/utils/ui_utils.dart';
 import '../../workplace/data/workplace_service.dart';
 import '../../workplace/data/models.dart';
 
@@ -61,9 +62,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   Future<void> _save() async {
     if (_titleController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Title required')));
+      UiUtils.showSnackBar(context, 'Title is required', isError: true);
       return;
     }
 
@@ -88,24 +87,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.taskToEdit == null
-                  ? 'Task created successfully'
-                  : 'Task updated successfully',
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.success,
-          ),
-        );
+      if (mounted) {
+        final message = widget.taskToEdit == null
+            ? 'Task created successfully'
+            : 'Task updated successfully';
+        UiUtils.showSnackBar(context, message);
         Navigator.pop(context);
+      }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        UiUtils.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
