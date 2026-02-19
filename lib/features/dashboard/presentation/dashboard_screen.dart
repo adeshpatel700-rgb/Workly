@@ -11,6 +11,7 @@ import '../../tasks/presentation/task_list.dart';
 import '../../workplace/presentation/members_screen.dart';
 import '../../auth/presentation/landing_screen.dart';
 import '../../auth/presentation/join_workplace_screen.dart';
+import '../../profile/presentation/profile_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -198,6 +199,15 @@ class _DashboardContentState extends State<_DashboardContent> {
                 );
               },
             ),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {

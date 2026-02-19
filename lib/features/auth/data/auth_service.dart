@@ -101,6 +101,19 @@ class AuthService {
     await prefs.clear();
   }
 
+  Future<void> updateDisplayName(String name) async {
+    if (currentUser == null) throw 'User not logged in';
+    
+    // 1. Update Firestore
+    await _firestore.collection('users').doc(currentUser!.uid).update({
+      'name': name,
+    });
+    
+    // 2. Update Local Cache
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', name);
+  }
+
   Future<String?> getUserRole() async {
     if (currentUser == null) return null;
     final doc = await _firestore
