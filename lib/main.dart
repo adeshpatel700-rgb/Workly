@@ -7,6 +7,9 @@ import 'features/auth/data/auth_service.dart';
 import 'features/workplace/data/workplace_service.dart';
 import 'features/auth/presentation/landing_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/splash/presentation/splash_screen.dart';
+import 'core/constants/app_routes.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -25,6 +28,7 @@ void main() async {
   runApp(const WorklyApp());
 }
 
+
 class WorklyApp extends StatelessWidget {
   const WorklyApp({super.key});
 
@@ -39,7 +43,16 @@ class WorklyApp extends StatelessWidget {
         title: 'Workly',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const AuthWrapper(),
+        // Define routes
+        initialRoute: AppRoutes.splash,
+        routes: {
+          AppRoutes.splash: (context) => SplashScreen(
+            onAnimationComplete: () {
+              Navigator.of(context).pushReplacementNamed(AppRoutes.authWrapper);
+            },
+          ),
+          AppRoutes.authWrapper: (context) => const AuthWrapper(),
+        },
       ),
     );
   }
