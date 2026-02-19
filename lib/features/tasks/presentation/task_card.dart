@@ -8,6 +8,7 @@ import '../../workplace/data/workplace_service.dart';
 import '../../workplace/data/models.dart';
 import '../../auth/data/auth_service.dart';
 import 'add_task_screen.dart';
+import 'task_details_screen.dart';
 
 class TaskCard extends StatefulWidget {
   final TaskItem task;
@@ -118,8 +119,16 @@ class _TaskCardState extends State<TaskCard> {
           borderRadius: BorderRadius.circular(16),
           onTap: canInteract
               ? () {
-                  HapticFeedback.lightImpact();
-                  // View details? optional
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TaskDetailsScreen(
+                          task: widget.task,
+                          workplaceId: widget.workplaceId,
+                          isAdmin: _isAdmin == true,
+                        ),
+                      ),
+                    );
                 }
               : null,
           child: Padding(
