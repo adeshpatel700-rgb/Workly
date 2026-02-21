@@ -7,9 +7,9 @@ import 'features/auth/data/auth_service.dart';
 import 'features/workplace/data/workplace_service.dart';
 import 'features/auth/presentation/landing_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
-import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/splash/presentation/splash_screen.dart';
 import 'core/constants/app_routes.dart';
+import 'core/services/notification_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -22,8 +22,10 @@ void main() async {
     debugPrint("✅ Firebase initialized successfully");
   } catch (e) {
     debugPrint("❌ Firebase initialization error: $e");
-    // Continue anyway - the app will show error state if Firebase is needed
   }
+
+  // Initialize local notifications (no external API required)
+  await NotificationService.instance.initialize();
 
   runApp(const WorklyApp());
 }
