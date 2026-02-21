@@ -2,72 +2,43 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workly/core/constants/app_colors.dart';
 import '../../workplace/data/workplace_service.dart';
 import '../../workplace/data/models.dart';
-import '../../auth/data/auth_service.dart';
 import 'add_task_screen.dart';
 import 'task_details_screen.dart';
 
-class TaskCard extends StatefulWidget {
+class TaskCard extends StatelessWidget {
   final TaskItem task;
   final String workplaceId;
   final String currentUserId;
+  final bool isAdmin;
+  final String userName;
 
   const TaskCard({
     super.key,
     required this.task,
     required this.workplaceId,
     required this.currentUserId,
+    required this.isAdmin,
+    required this.userName,
   });
 
   @override
-  State<TaskCard> createState() => _TaskCardState();
-}
-
-class _TaskCardState extends State<TaskCard> {
-  bool? _isAdmin;
-  String? _userName;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkRoleAndName();
-  }
-
-  void _checkRoleAndName() async {
-    final auth = Provider.of<AuthService>(context, listen: false);
-    final prefs = await SharedPreferences.getInstance();
-
-    final role = await auth.getUserRole();
-    final name = prefs.getString('userName') ?? 'Unknown';
-
-    if (mounted) {
-      setState(() {
-        _isAdmin = role == 'admin';
-        _userName = name;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // New Logic: Completed if completedBy is not null
-    final isDone = widget.task.completedBy != null;
-    final completedByName = widget.task.completedByName ?? 'Unknown';
-    final isMyCompletion = widget.task.completedBy == widget.currentUserId;
+    final isDone = task.completedBy != null;
+    final completedByName = task.completedByName ?? 'Unknown';
+    final isMyCompletion = task.completedBy == currentUserId;
 
-    // Interaction Rules:
-    // - If not done: Anyone can do it.
-    // - If done: Only Admin or the Completer can undo.
-    final canInteract = !isDone || (_isAdmin == true || isMyCompletion);
+    // canInteract only gates the checkbox (undo action) — NOT navigation.
+    // Anyone can tap the card to view details.
+    final canUndo = isAdmin || isMyCompletion;
 
     final service = Provider.of<WorkplaceService>(context, listen: false);
 
     return Dismissible(
-      key: Key(widget.task.id),
-      direction: _isAdmin == true
+      key: Key(task.id),
+      direction: isAdmin
           ? DismissDirection.endToStart
           : DismissDirection.none,
       confirmDismiss: (_) async {
@@ -93,7 +64,7 @@ class _TaskCardState extends State<TaskCard> {
         );
       },
       onDismissed: (_) {
-        service.deleteTask(widget.workplaceId, widget.task.id);
+        service.deleteTask(workplaceId, task.id);
       },
       background: Container(
         alignment: Alignment.centerRight,
@@ -117,20 +88,19 @@ class _TaskCardState extends State<TaskCard> {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: canInteract
-              ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TaskDetailsScreen(
-                          task: widget.task,
-                          workplaceId: widget.workplaceId,
-                          isAdmin: _isAdmin == true,
-                        ),
-                      ),
-                    );
-                }
-              : null,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TaskDetailsScreen(
+                  task: task,
+                  workplaceId: workplaceId,
+                  isAdmin: isAdmin,
+                ),
+              ),
+            );
+          },
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -168,7 +138,7 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                     ),
                   ),
-                if (widget.task.imageBase64 != null) const SizedBox(height: 16),
+                if (task.imageBase64 != null) const SizedBox(height: 16),
 
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +148,7 @@ class _TaskCardState extends State<TaskCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.task.title,
+                            task.title,
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
                                   decoration: isDone
@@ -194,7 +164,7 @@ class _TaskCardState extends State<TaskCard> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.task.description,
+                            task.description,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: isDone
@@ -205,8 +175,8 @@ class _TaskCardState extends State<TaskCard> {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (widget.task.location != null &&
-                              widget.task.location!.isNotEmpty) ...[
+                          if (task.location != null &&
+                              task.location!.isNotEmpty) ...[
                             const SizedBox(height: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -231,7 +201,7 @@ class _TaskCardState extends State<TaskCard> {
                                   const SizedBox(width: 4),
                                   Flexible(
                                     child: Text(
-                                      widget.task.location!,
+                                      task.location!,
                                       style: const TextStyle(
                                         fontSize: 12,
                                         color: AppColors.primary,
@@ -249,7 +219,7 @@ class _TaskCardState extends State<TaskCard> {
                     ),
                     const SizedBox(width: 8),
                     // EDIT BUTTON
-                    if (_isAdmin == true)
+                    if (isAdmin)
                       IconButton(
                         icon: const Icon(Icons.edit, color: AppColors.primary),
                         onPressed: () {
@@ -257,8 +227,8 @@ class _TaskCardState extends State<TaskCard> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => AddTaskScreen(
-                                workplaceId: widget.workplaceId,
-                                taskToEdit: widget.task,
+                                workplaceId: workplaceId,
+                                taskToEdit: task,
                               ),
                             ),
                           );
@@ -279,7 +249,7 @@ class _TaskCardState extends State<TaskCard> {
                               : Colors.grey.shade400,
                           width: 2,
                         ),
-                        onChanged: canInteract
+                        onChanged: (!isDone || canUndo)
                             ? (val) async {
                                 HapticFeedback.mediumImpact();
                                 if (val == null) return;
@@ -366,11 +336,11 @@ class _TaskCardState extends State<TaskCard> {
                                       : result['remark'];
 
                                   service.toggleTaskCompletion(
-                                    widget.workplaceId,
-                                    widget.task.id,
-                                    widget.currentUserId,
+                                    workplaceId,
+                                    task.id,
+                                    currentUserId,
                                     val,
-                                    _userName ?? 'Unknown',
+                                    userName.isEmpty ? 'Unknown' : userName,
                                     completionRemark: remark,
                                   );
                                 }
@@ -424,8 +394,8 @@ class _TaskCardState extends State<TaskCard> {
                             ),
                           ],
                         ),
-                        if (widget.task.completionRemark != null &&
-                            widget.task.completionRemark!.isNotEmpty) ...[
+                        if (task.completionRemark != null &&
+                            task.completionRemark!.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.all(10),
@@ -447,7 +417,7 @@ class _TaskCardState extends State<TaskCard> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    widget.task.completionRemark!,
+                                    task.completionRemark!,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey.shade700,

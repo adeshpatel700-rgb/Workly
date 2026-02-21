@@ -154,9 +154,9 @@ class _DashboardContentState extends State<_DashboardContent> {
 
     // 4. Main Dashboard (Has Workplace ID)
     final screens = [
-      TaskList(workplaceId: vm.workplaceId!, filter: TaskFilter.all),
-      TaskList(workplaceId: vm.workplaceId!, filter: TaskFilter.pending),
-      TaskList(workplaceId: vm.workplaceId!, filter: TaskFilter.completed),
+      TaskList(workplaceId: vm.workplaceId!, filter: TaskFilter.all, isAdmin: vm.isAdmin, userName: vm.userName),
+      TaskList(workplaceId: vm.workplaceId!, filter: TaskFilter.pending, isAdmin: vm.isAdmin, userName: vm.userName),
+      TaskList(workplaceId: vm.workplaceId!, filter: TaskFilter.completed, isAdmin: vm.isAdmin, userName: vm.userName),
     ];
 
     return Scaffold(

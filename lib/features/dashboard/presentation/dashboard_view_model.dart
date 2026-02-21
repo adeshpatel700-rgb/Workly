@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../auth/data/auth_service.dart';
+import '../../../core/services/task_notifier.dart';
 
 class DashboardViewModel extends ChangeNotifier {
   final AuthService _authService;
@@ -11,9 +12,11 @@ class DashboardViewModel extends ChangeNotifier {
 
   String? _workplaceId;
   String? _userRole;
+  String _userName = '';
   bool _isLoading = true;
   String? _error;
   bool _shouldCreateUserDoc = false;
+  final TaskNotifier _taskNotifier = TaskNotifier();
 
   DashboardViewModel(this._authService) {
     _init();
@@ -21,12 +24,15 @@ class DashboardViewModel extends ChangeNotifier {
 
   String? get workplaceId => _workplaceId;
   String? get userRole => _userRole;
+  String get userName => _userName;
+  bool get isAdmin => _userRole == 'admin';
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   @override
   void dispose() {
     _subscription?.cancel();
+    _taskNotifier.dispose();
     super.dispose();
   }
 
@@ -42,6 +48,7 @@ class DashboardViewModel extends ChangeNotifier {
       // Load from cache first for immediate display
       final prefs = await SharedPreferences.getInstance();
       _workplaceId = prefs.getString('workplaceId');
+      _userName = prefs.getString('userName') ?? '';
       
       // Listen to Firestore updates
       _subscription = FirebaseFirestore.instance
@@ -96,6 +103,16 @@ class DashboardViewModel extends ChangeNotifier {
         ? roleRaw
         : (roleRaw is List && roleRaw.isNotEmpty ? roleRaw[0] : null);
 
+    // Name Parsing (from Firestore, fallback to cached value)
+    final nameRaw = data['name'];
+    final String serverName = nameRaw is String
+        ? nameRaw
+        : (nameRaw is List && nameRaw.isNotEmpty ? nameRaw[0] : _userName);
+    if (serverName.isNotEmpty) {
+      _userName = serverName;
+      await prefs.setString('userName', serverName);
+    }
+
     // Sync state
     if (serverWpId != _workplaceId || serverRole != _userRole) {
       _workplaceId = serverWpId;
@@ -105,10 +122,19 @@ class DashboardViewModel extends ChangeNotifier {
       if (_workplaceId != null) {
         await prefs.setString('workplaceId', _workplaceId!);
       }
-      
+
+      // Start/restart task listener for notifications
+      if (_workplaceId != null) {
+        _taskNotifier.startListening(
+          workplaceId: _workplaceId!,
+          isAdmin: _userRole == 'admin',
+        );
+      } else {
+        _taskNotifier.stopListening();
+      }
+
       notifyListeners();
     } else {
-      // Just notify if loading state changed
       notifyListeners(); 
     }
   }
@@ -133,6 +159,7 @@ class DashboardViewModel extends ChangeNotifier {
   
   Future<void> signOut() async {
     _subscription?.cancel();
+    _taskNotifier.stopListening();
     await _authService.signOut();
   }
 }

@@ -12,8 +12,16 @@ enum TaskFilter { all, pending, completed }
 class TaskList extends StatelessWidget {
   final String workplaceId;
   final TaskFilter filter;
+  final bool isAdmin;
+  final String userName;
 
-  const TaskList({super.key, required this.workplaceId, required this.filter});
+  const TaskList({
+    super.key,
+    required this.workplaceId,
+    required this.filter,
+    required this.isAdmin,
+    required this.userName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -202,6 +210,8 @@ class TaskList extends StatelessWidget {
                   task: task,
                   workplaceId: workplaceId,
                   currentUserId: uid,
+                  isAdmin: isAdmin,
+                  userName: userName,
                 )
                 .animate()
                 .slideX(duration: 300.ms, delay: (50 * index).ms)
