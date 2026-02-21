@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:workly/core/constants/app_colors.dart';
 import '../../workplace/data/workplace_service.dart';
@@ -433,6 +434,22 @@ class TaskCard extends StatelessWidget {
                     ),
                   ),
                 ],
+                // --- Posted On ---
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Posted on ${DateFormat('MMM d, y').format(task.createdAt)}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
